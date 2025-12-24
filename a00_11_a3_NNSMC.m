@@ -1,77 +1,68 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Torque limited to [-500, 500]
+%Torque limited to [-2000, 2000]
+
 
 % Parameter initialization
-dt = 0.001;        % Simulation time step
-t_end = 5;         % Simulation end time
-t = 0:dt:t_end;    % Time vector
+dt = 0.001;       % Simulation time step
+t_end = 5;        % Simulation end time
+t = 0:dt:t_end;   % Time vector
 n = 0;
 Da = 2;
 Dt = 0.5;
 
-% ===================== RBF neural network parameters =====================
-c_a = 70;                     % Sliding surface gain
-HidLayNuma = 5;               % Number of hidden-layer neurons
-OutLayNum = 1;                % Number of output neurons
-gamma_a = 60000;              % Adaptive learning rate
-eta_a = 160;                  % Switching gain
-c_i_a = 8 * [-2 -1  0  1  1    % RBF center vectors
-             -2 -1  0  1  1];
-b_i_a = 0.1;                  % RBF width
-hat_W1_a = 0.08 * ones(HidLayNuma, OutLayNum);  % Initial adaptive weights
+% RBF (Radial Basis Function) network parameters
+c_a = 100;
+HidLayNuma = 5;          % Number of hidden-layer neurons
+OutLayNum = 1;           % Number of output-layer neurons
+gamma_a = 80000;         % Learning rate (adaptation gain)
+eta_a = 1950;            % Switching gain
+c_i_a = 8*[-2 -1  0  1  1
+           -2 -1  0  1  1]; % RBF centers
+b_i_a = 0.1;             % RBF width
+hat_W1_a = 0.08*ones(HidLayNuma, OutLayNum); % Initial NN weights
 
-% Initial system state
 x = [0; 0];
+xr_a  = @(t) 10 + (t > 2) * 4*sin(t*pi);     % Reference position
+dxr_a = @(t)      (t > 2) * 4*pi*cos(t*pi);  % Reference velocity
 
-% Reference trajectory
-xr_a  = @(t) 0.05 + (t > 2) * 0.02 * sin(t*pi);      % Reference position
-dxr_a = @(t) (t > 2) * 0.02 * pi * cos(t*pi);       % Reference velocity
-
-% Definition of nonlinear system dynamics and gain function
-f = @(x, t) (t <= 1) * (-2*x(1) - cos(t)*x(2)^3) ...
-          + (t > 1)  * 200 * (cos(t)^2*x(1) + 2*sin(t)*cos(t));  % Nonlinear function f(x,t)
-g = @(x) 1 + x(1);                                  % Gain function g(x)
-U = @(x,t) 0.5*sin(t)*x(1) + 0.6*cos(t)*x(2);       % Additional nonlinear term
-
+% Definitions of nonlinear dynamics and input gain
+f = @(x, t) ((t <= 1) * (-2*x(1) - cos(t)*x(2)*x(2)*x(2)) + ...
+            (t > 1)  * 2200*(cos(t)*cos(t)*x(1) + 2*sin(t)*cos(t))); % Nonlinear term f(x,t)
+g = @(x) 1 + x(1);                                                % Input gain g(x)
+U = @(x,t) 0.5*sin(t)*x(1) + 0.6*cos(t)*x(2);                     % Additional known term
 integral_error = 0;
 
-% ====== 2) Pre-generate random variables for each 1 s interval (uniformly distributed in [-1, 1]) ======
-N  = floor(t_end) + 2;          % Number of intervals (extra one to avoid index overflow)
-U1 = 2*rand(N,1) - 1;           % Random disturbance term
-U2 = 2*rand(N,1) - 1;           % Random disturbance term
-U3 = 2*rand(N,1) - 1;           % Random disturbance term
+% ====== 2) Pre-generate random variables for each 1-second interval (uniform in [-1,1]) ======
+N  = floor(t_end) + 2;    % Number of intervals (one extra to avoid out-of-bound indexing)
+U1 = 2*rand(N,1) - 1;     % Random term for disturbance component
+U2 = 2*rand(N,1) - 1;     % Random term for disturbance component
+U3 = 2*rand(N,1) - 1;     % Random term for disturbance component
 
-% ====== 3) Utility function: return the random value of the current 1 s interval (piecewise constant) ======
-stepRand = @(t,U) U(min(floor(t)+1, numel(U)));
+% ====== 3) Utility function: given t, return the random value of the current 1-second interval (piecewise constant) ======
+stepRand = @(t,U) U( min(floor(t)+1, numel(U)) );
 
-% Persistent disturbance
-d4 = @(x,t) -10*sin(t)*cos(t) ...
-            + 10*stepRand(t,U1)*x(2) ...
-            + 5*stepRand(t,U2)*x(1) ...
-            + 2*stepRand(t,U3);
+d4 = @(x,t) -100*sin(t)*cos(t) + 100*stepRand(t,U1)*x(2) + ...
+            50*stepRand(t,U2)*x(1) + 20*stepRand(t,U3); % Persistent disturbance
 
-% ===================== Main simulation loop =====================
-tic;   % Start timing
+% Main simulation loop
+tic  % Start timing
 for k = 1:length(t)
 
-    % Persistent disturbance
-    d = d4(x, t(k));
+    %%%%%%%%%%%% Disturbance %%%%%%%%%%%%%%%%%
+    d = d4(x, t(k));   % Persistent disturbance
 
-    % Tracking error and sliding surface
-    e  = xr_a(t(k))  - x(1);      % Position error
-    de = dxr_a(t(k)) - x(2);      % Velocity error
-    s_a = c_a * e + de;           % Sliding surface
+    e  = xr_a(t(k))  - x(1);
+    de = dxr_a(t(k)) - x(2);
+    s_a = c_a*e + de;  % Sliding surface
 
-    % RBF neural network activation
+    % Compute RBF activations
     for j = 1:HidLayNuma
-        h1a(j,:) = exp( -norm([x(1); x(2)] - c_i_a(:,j))^2 / (2*b_i_a^2) );
+        h1a(j,:) = exp( -norm([x(1); x(2)] - c_i_a(:,j))^2/(2*b_i_a^2) );
     end
 
-    % Neural network output estimation
+    % NN estimation and weight update
     hat_fx1_a = hat_W1_a' * h1a;
-
-    % Adaptive weight update law
-    hat_W1_a = hat_W1_a + dt * (gamma_a * s_a(1) * h1a);
+    hat_W1_a  = hat_W1_a + dt * (gamma_a * s_a(1) * h1a);
 
     % Control law
     u = eta_a * sign(s_a) + hat_fx1_a;
@@ -80,58 +71,54 @@ for k = 1:length(t)
     dx1 = x(2);
     dx2 = f(x, t(k)) + g(x) * u + d + U(x, t(k));
 
-    % State update using Euler method
+    % Update states using the Euler method
     x(1) = x(1) + dx1 * dt;
     x(2) = x(2) + dx2 * dt;
 
-    % Data storage
-    x_trajectory_NNSMC(:, k) = x;   % State trajectory
-    control_input_NNSMC(k) = u;     % Control input
-    x_error_NNSMC(k) = e;           % Position error
-    x_derror_NNSMC(k) = de;         % Velocity error
+    % Store trajectories
+    x_trajectory_NNSMC(:, k) = x;
+    control_input_NNSMC(k)  = u;
+    x_error_NNSMC(k)        = e;
+    x_derror_NNSMC(k)       = de;
+
 end
 
 elapsed_time = toc;  % Stop timing and return elapsed time
-fprintf('Total simulation time: %.4f seconds\n', elapsed_time);
+fprintf('Total simulation time: %.4f s\n', elapsed_time);
 
-% ===================== Plotting =====================
-
-% Control input versus time
+% Plotting
 figure;
 plot(t, control_input_NNSMC(1, :), 'r');
-xlabel('Time (s)', 'FontSize', 16);
+xlabel('Time(s)', 'FontSize', 16);
 ylabel('u', 'FontSize', 16);
-ylim([-500, 500]);
 grid on;
 set(gca, 'FontName', 'Times New Roman');
 ax = gca;
 ax.FontSize = 16;
+hold on;
 
-% Tracking error versus time
 figure;
 plot(t, x_error_NNSMC(1, :), 'r');
-xlabel('Time (s)', 'FontSize', 16);
+xlabel('Time(s)', 'FontSize', 16);
 ylabel('Error', 'FontSize', 16);
-ylim([-0.01, 0.01]);
 grid on;
 set(gca, 'FontName', 'Times New Roman');
 ax = gca;
 ax.FontSize = 16;
+hold on;
 
-% Position trajectory versus time
 figure;
 plot(t, x_trajectory_NNSMC(1, :), 'r');
-xlabel('Time (s)', 'FontSize', 16);
+xlabel('Time(s)', 'FontSize', 16);
 ylabel('Position', 'FontSize', 16);
-ylim([-0.001, 0.08]);
 grid on;
 set(gca, 'FontName', 'Times New Roman');
 ax = gca;
 ax.FontSize = 16;
+hold on;
 
-% Skew-symmetric matrix function
 function S = skew(v)
-% Input v is a 3×1 vector; output S is a 3×3 skew-symmetric matrix
+% Input: v is a 3×1 vector; Output: S is a 3×3 skew-symmetric matrix
     S = [   0    -v(3)   v(2);
            v(3)   0    -v(1);
           -v(2)  v(1)    0   ];
