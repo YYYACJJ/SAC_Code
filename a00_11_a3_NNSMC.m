@@ -1,4 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Due to the existence of random terms, the system may get out of control 
+%and it may be necessary to try several times
 %Torque limited to [-2000, 2000]
 
 
