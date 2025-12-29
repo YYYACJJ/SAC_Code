@@ -19,8 +19,8 @@ HidLayNuma = 5;          % Number of hidden-layer neurons
 OutLayNum = 1;           % Number of output-layer neurons
 gamma_a = 80000;         % Learning rate (adaptation gain)
 eta_a = 1950;            % Switching gain
-c_i_a = 8*[-2 -1  0  1  1
-           -2 -1  0  1  1]; % RBF centers
+c_i_a = 8*[-2 -1  0  1  2
+           -2 -1  0  1  2]; % RBF centers
 b_i_a = 0.1;             % RBF width
 hat_W1_a = 0.08*ones(HidLayNuma, OutLayNum); % Initial NN weights
 

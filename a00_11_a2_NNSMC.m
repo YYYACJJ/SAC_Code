@@ -16,8 +16,8 @@ HidLayNuma = 5;
 OutLayNum = 1;
 gamma_a = 300;
 eta_a = 70;
-c_i_a = 8*[-2 -1  0  1  1
-       -2 -1  0  1  1];
+c_i_a = 8*[-2 -1  0  1  2
+       -2 -1  0  1  2];
 b_i_a = 0.4;
 hat_W1_a = 0.2*ones(HidLayNuma, OutLayNum);
 
