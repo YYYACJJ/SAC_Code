@@ -46,7 +46,7 @@ U5 = 2*rand(N,1) - 1;           % Random term for d2
 U6 = 2*rand(N,1) - 1;           % Random term for d1
 U7 = 2*rand(N,1) - 1;           % Random term for d1
 % ====== 3) A small utility: given t, returns the random value for the "current 1s interval" (piecewise constant) ======
-stepRand = @(t,U) U( min(floor(t)+1, numel(U)) );
+stepRand = @(t,UT) UT(min(floor(t)+1, numel(UT)));
 
 
 d3 = @(x,t) 70*stepRand(t,U7);  % Impulse disturbance

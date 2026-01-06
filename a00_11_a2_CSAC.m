@@ -48,7 +48,7 @@ U6 = 2*rand(N,1) - 1;
 U7 = 2*rand(N,1) - 1;
 
 % ====== 3) Utility function: return the random value of the current 1-second interval ======
-stepRand = @(t,U) U( min(floor(t)+1, numel(U)) );
+stepRand = @(t,UT) UT(min(floor(t)+1, numel(UT)));
 
 % Disturbance definitions
 d3 = @(x,t) 70 * stepRand(t,U7);  % Impulsive disturbance

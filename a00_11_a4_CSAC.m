@@ -43,7 +43,7 @@ U5 = 2*rand(N,1) - 1;                  % Random disturbance term
 U6 = 2*rand(N,1) - 1;                  % Random disturbance term
 
 % ====== 3) Utility function: return the random value of the current 1 s interval (piecewise constant) ======
-stepRand = @(t,U) U(min(floor(t)+1, numel(U)));
+stepRand = @(t,UT) UT(min(floor(t)+1, numel(UT)));
 
 % Time-varying disturbance
 d1 = @(x,t) 50*(sin(t)*cos(t)*x(1) + cos(t)*x(2)) ...

@@ -42,7 +42,7 @@ U2 = 2*rand(N,1) - 1;     % Random term for disturbance component
 U3 = 2*rand(N,1) - 1;     % Random term for disturbance component
 
 % ====== 3) Utility function: given t, return the random value of the current 1-second interval (piecewise constant) ======
-stepRand = @(t,U) U( min(floor(t)+1, numel(U)) );
+stepRand = @(t,UT) UT(min(floor(t)+1, numel(UT)));
 
 d4 = @(x,t) -100*sin(t)*cos(t) + 100*stepRand(t,U1)*x(2) + ...
             50*stepRand(t,U2)*x(1) + 20*stepRand(t,U3); % Persistent disturbance

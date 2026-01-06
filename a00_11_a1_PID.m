@@ -35,7 +35,7 @@ Ki = 2500;     % Integral gain (diagonal)
 Kd = 0.01;     % Derivative gain (diagonal)
 
 % Additional nonlinear term
-U = 0.2*sign(x) + 0.1*sin(x);
+U=@(x)0.2*sign(x)+0.1*sin(x);
 
 % ====== 2) Pre-generate random variables for each 1 s interval (uniform distribution in [-1, 1]) ======
 N  = floor(t_end) + 2;                 % Number of intervals (extra one to avoid index overflow)
@@ -45,7 +45,7 @@ U3 = 2*rand(N,1) - 1;                  % Random disturbance term
 U4 = 2*rand(N,1) - 1;                  % Random disturbance term
 
 % Utility function: return the random value of the current 1 s interval (piecewise constant)
-stepRand = @(t,U) U(min(floor(t)+1, numel(U)));
+stepRand = @(t,UT) UT(min(floor(t)+1, numel(UT)));
 
 % ====== 4) Disturbance functions (random terms updated every 1 s) ======
 d1 = @(x,t) 2*sin(0.5*t) + cos(x) + 2*sign(0.4*t) ...
@@ -79,7 +79,7 @@ for k = 1:length(t)
     previous_error = error;
 
     % System dynamics
-    dx = f(x, t(k)) + g(x) * u + d;
+    dx = f(x, t(k)) + g(x) * u +U(x) + d;
 
     % State update using Euler method
     x = x + dx * dt;

@@ -34,14 +34,14 @@ x_error = zeros(1, length(t));
 f = @(x, t) 0.9*cos(x)+0.3*sign(x);   % Nonlinear function f(x,t)
 g = @(x) 1 ;               % Gain function g(x)
 
-U=0.2*sign(x)+0.1*sin(x);
+U=@(x)0.2*sign(x)+0.1*sin(x);
 % ====== 2) Pre-generate random variables for each 1s interval (uniformly distributed in [-1,1]) ======
 N  = floor(t_end) + 2;       % Number of intervals (extra one for safety)
 U1 = 2*rand(N,1) - 1;           % Random term
 U2 = 2*rand(N,1) - 1;           % Random term
 U3 = 2*rand(N,1) - 1;           % Random term 
 U4 = 2*rand(N,1) - 1;           % Random term
-stepRand = @(t,U) U( min(floor(t)+1, numel(U)) );
+stepRand = @(t,UT) UT(min(floor(t)+1, numel(UT)));
 
 % ====== 4) Disturbance functions (adding random terms that change every 1s to the original expression) ======
 d1 = @(x,t) 2*sin(0.5*t) + cos(x) + 2*sign(0.4*t) + stepRand(t,U1)*x+stepRand(t,U2);
@@ -69,7 +69,7 @@ for k = 1:length(t)
     
     
     % System dynamic equation
-    dx = f(x, t(k)) + g(x) * u +U+ d;
+    dx = f(x, t(k)) + g(x) * u +U(x) + d;
     
     % Update state using Euler method
     x = x + dx  * dt;
