@@ -190,45 +190,64 @@ end
 
 
 function game=fcn(e,K_lf,K_lc,b1,b2,a1,a2,a3,a4)
-x=e;
-game=-K_lf * (atan(abs(3000*x))+0.00000001)*atan(10000*x);
-if x < -b1 && x > -b2
-game=-(a1+a2*abs(x)+a3*abs(x)*abs(x)+a4*abs(x)*abs(x)*abs(x));
-elseif x > b1 && x < b2
-game=((a1+a2*abs(x)+a3*abs(x)*abs(x)+a4*abs(x)*abs(x)*abs(x)));
-elseif abs(x) <= b1
-game=-K_lf * (atan(abs(3000*x))+0.00000001)*atan(10000*x);
-elseif abs(x) >= b2
-game=-K_lc*((pi/2-atan(450*abs(e)))*atan(150*abs(e))+0.00000001)*atan(10000*e);
-end
 
-
+game=fcnf(e,K_lf);
+if abs(e) > b1 && abs(e) < b2
+game=fcna(e,a1,a2,a3,a4);
+elseif abs(e) <= b1
+game=fcnf(e,K_lf);
+elseif abs(e) >= b2
+game=fcnc(e,K_lc);
 end
+end% 参数初始化
 
 
 function game=fcnf(e,K_lf)
 ke=3000;
 game=-K_lf * (atan(ke * abs(e)) + 0.00000001) * atan(10000 * e);
-end
+end% 参数初始化
 
 function game=fcnc(e,K_lc)
 ke=150;
 game=-K_lc*((pi/2-atan(450*abs(e)))*atan(ke*abs(e))+0.00000001)*atan(10000*e);
+end% 参数初始化
+
+function dgame = dfcnf(e, K_lf)
+ke = 3000;
+epsi = 1e-8;
+
+dgame = -K_lf * ( ...
+    (ke * sign(e) ./ (1 + (ke * abs(e)).^2)) .* atan(10000 * e) ...
+  + (atan(ke * abs(e)) + epsi) .* (10000 ./ (1 + (10000 * e).^2)) ...
+);
 end
 
-function dgame = dfcnf(x,K_lf)
-    epsilon = 1e-8;
-    term1 = -K_lf*3000*sign(x) .* atan(10000 * x) ./ (1 + (x).^2);
-    term2 = -K_lf*10000 * (atan(abs(x)) + epsilon) ./ (1 + (10000 * x).^2);
-    dgame =(term1 + term2);
+function dgame = dfcnc(e, K_lc)
+ke = 150;
+epsi = 1e-8;
+
+A = (pi/2 - atan(450*abs(e)));
+B = atan(ke*abs(e));
+C = atan(10000*e);
+
+% A' = -(450*sign(e)) / (1 + (450*|e|)^2)
+dA = -(450 * sign(e)) ./ (1 + (450 * abs(e)).^2);
+
+% B' = (ke*sign(e)) / (1 + (ke*|e|)^2)
+dB = (ke * sign(e)) ./ (1 + (ke * abs(e)).^2);
+
+% C' = 10000 / (1 + (10000*e)^2)
+dC = 10000 ./ (1 + (10000 * e).^2);
+
+dgame = -K_lc * ( ...
+    (dA .* B + A .* dB) .* C + (A .* B + epsi) .* dC ...
+);
 end
 
-function dgame = dfcnc(x,k_ac)
-    epsilon = 1e-8;
-    k_bc = 300;   
-    N=-atan(10000 * x);
-    dN=-10000./ (1 + (10000 * x).^2);
-    R=-k_ac*((pi/2-atan(k_bc*abs(x)))*atan(1*abs(x))+0.00000001)*atan(10000*x);
-    dR = k_ac * ((-k_bc * atan(abs(x)) / (1 + k_bc^2 * x^2)) + 150*((pi/2 - atan(k_bc * abs(x))) / (1 + x^2))) * sign(x);
-    dgame =R*dN+N*dR;
+
+function game = fcna(e,a1,a2,a3,a4)
+game = sign(e) .*(a1 ...
+  + a2 * abs(e) ...
+  + a3 * abs(e).^2 ...
+  + a4 * abs(e).^3);
 end
