@@ -168,25 +168,16 @@ hold on;
 %SSAF
 
 function [a1,a2,a3,a4] = afcn(b1,b2,K_lf,K_lc)
-    C1=fcnf(b1,K_lf);
-    C2=dfcnf(b1,K_lf);
-    C3=fcnc(b2,K_lc);
-    C4=dfcnc(b2,K_lc);
+    C1 = fcnf(b1, K_lf);
+    C2 = dfcnf(b1, K_lf);
+    C3 = fcnc(b2, K_lc);
+    C4 = dfcnc(b2, K_lc);
 
-    A = [ ...
-        1,  b1,  b1^2,  b1^3;
-        0,  1,   2*b1,  3*b1^2;
-        1,  b2,  b2^2,  b2^3;
-        0,  1,   2*b2,  3*b2^2
-    ];
-    B = [C1; C2; C3; C4];
-
-    a = A \ B;   % 数值稳定求解
-
-    a1 = a(1);
-    a2 = a(2);
-    a3 = a(3);
-    a4 = a(4);
+    h = b1 - b2;
+    a4 = (h*(C2 + C4) - 2*(C1 - C3)) / (h^3);
+    a3 = (C3 - C1 + h*C2)/(h^2) - (3*b1 - h)*a4;
+    a2 = C2 - 2*b1*a3 - 3*b1^2*a4;
+    a1 = C1 - b1*a2 - b1^2*a3 - b1^3*a4;
 end
 
 
