@@ -7,8 +7,12 @@ This method is mainly developed for scenarios in which PID control remains domin
 
 This paper presents only one possible approach for achieving prescribed performance by modifying the attractive surface. There are many possible implementation methods and functional forms for realizing this idea, so readers should not be limited to the specific form proposed in this work. The controller form presented here is mainly designed for second-order systems, with an emphasis on simplicity and ease of design. This concept can also be applied to many other control objectives, such as prescribed-time control, synchronized trajectory planning and tracking control, constraint control, and prescribed-performance-based tracking control.
 
+Theoretically, SAC is simply setting the unbounded linear surface of PID to an arbitrary bounded surface. If the chosen surface is appropriate, SAC will inevitably outperform PID. Furthermore, introducing the concept of bounded surfaces into existing control methods will result in performance superior to previous strategies.
+
+This paper primarily focuses on practical applications. Please forgive any theoretical issues, and feel free to offer any corrections.
+
 If you have any theoretical or coding questions, please feel free to leave a comment.
 
-If this paper and the developed code are helpful or inspiring to your work, please consider citing this article.
+**If this paper and the developed code are helpful or inspiring to your work, please consider citing this article.**
 
 
