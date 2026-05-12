@@ -67,7 +67,7 @@ k_cs=320;%
 K_f1=0.17;
 K_c1=1;
 
-b1=0.040;
+b1=0.04;
 b2=0.0401;
 [a1,a2,a3,a4]=afcn(b1,b2,K_f1,K_c1);
 tic  % Start timer
@@ -168,10 +168,10 @@ hold on;
 %SSAF
 
 function [a1,a2,a3,a4] = afcn(b1,b2,K_lf,K_lc)
-    C1 = fcnf(b1, K_lf);
-    C2 = dfcnf(b1, K_lf);
-    C3 = fcnc(b2, K_lc);
-    C4 = dfcnc(b2, K_lc);
+    C1 = fcnfR(b1, K_lf);
+    C2 = dfcnfR(b1, K_lf);
+    C3 = fcncR(b2, K_lc);
+    C4 = dfcncR(b2, K_lc);
 
     h = b1 - b2;
     a4 = (h*(C2 + C4) - 2*(C1 - C3)) / (h^3);
@@ -196,55 +196,55 @@ game=fcnf(e,K_lf);
 elseif abs(e) >= b2
 game=fcnc(e,K_lc);
 end
-end% 参数初始化
 
+end
 
+%FSAF
 function game=fcnf(e,K_lf)
 ke=3000;
 game=-K_lf * (atan(ke * abs(e)) + 0.00000001) * atan(10000 * e);
-end% 参数初始化
-
+end
+%CSAF
 function game=fcnc(e,K_lc)
 ke=150;
 game=-K_lc*((pi/2-atan(450*abs(e)))*atan(ke*abs(e))+0.00000001)*atan(10000*e);
-end% 参数初始化
-
-function dgame = dfcnf(e, K_lf)
-ke = 3000;
-epsi = 1e-8;
-
-dgame = -K_lf * ( ...
-    (ke * sign(e) ./ (1 + (ke * abs(e)).^2)) .* atan(10000 * e) ...
-  + (atan(ke * abs(e)) + epsi) .* (10000 ./ (1 + (10000 * e).^2)) ...
-);
 end
 
-function dgame = dfcnc(e, K_lc)
-ke = 150;
-epsi = 1e-8;
-
-A = (pi/2 - atan(450*abs(e)));
-B = atan(ke*abs(e));
-C = atan(10000*e);
-
-% A' = -(450*sign(e)) / (1 + (450*|e|)^2)
-dA = -(450 * sign(e)) ./ (1 + (450 * abs(e)).^2);
-
-% B' = (ke*sign(e)) / (1 + (ke*|e|)^2)
-dB = (ke * sign(e)) ./ (1 + (ke * abs(e)).^2);
-
-% C' = 10000 / (1 + (10000*e)^2)
-dC = 10000 ./ (1 + (10000 * e).^2);
-
-dgame = -K_lc * ( ...
-    (dA .* B + A .* dB) .* C + (A .* B + epsi) .* dC ...
-);
+%The rate function of FSAF
+function game=fcnfR(e,K_lf)
+ke=3000;
+game=K_lf * (atan(ke * abs(e)) + 0.00000001) ;
 end
 
+%The rate function of CSAF
+function game=fcncR(e,K_lc)
+ke=150;
+game=K_lc*((pi/2-atan(450*abs(e)))*atan(ke*abs(e))+0.00000001);
+end 
 
+%The derivative of FSAF
+function dgame = dfcnfR(e, K_lf)
+    ke = 3000;
+    dgame = K_lf * (ke * sign(e)) ./ (1 + (ke * abs(e)).^2);
+end
+
+%The derivative of CSAF
+function dgame = dfcncR(e, K_lc)
+    ke = 150;
+    k_other = 450;
+    s = sign(e);
+    abs_e = abs(e);
+    d_part1 = -(k_other * s) ./ (1 + (k_other * abs_e).^2);
+    part2 = atan(ke * abs_e);
+    part1 = (pi/2) - atan(k_other * abs_e);
+    d_part2 = (ke * s) ./ (1 + (ke * abs_e).^2);
+    dgame = K_lc * (d_part1 .* part2 + part1 .* d_part2);
+end
+
+%switched convergence-rate function
 function game = fcna(e,a1,a2,a3,a4)
-game = sign(e) .*(a1 ...
+game = -(a1 ...
   + a2 * abs(e) ...
   + a3 * abs(e).^2 ...
-  + a4 * abs(e).^3);
+  + a4 * abs(e).^3)*atan(10000*e);
 end
